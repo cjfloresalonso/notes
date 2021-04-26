@@ -1,0 +1,130 @@
+#compdef note
+#autoload
+
+# Copyright (C) 2012 - 2014:
+#    Johan Venant <jvenant@invicem.pro>
+#    Brian Mattern <rephorm@rephorm.com>
+#    Jason A. Donenfeld <Jason@zx2c4.com>.
+# All Rights Reserved.
+# This file is licensed under the GPLv2+. Please see COPYING for more information.
+
+
+# If you use multiple repositories, you can configure completion like this:
+#
+# compdef _note worknote
+# zstyle ':completion::complete:worknote::' prefix "$HOME/work/note"
+# worknote() {
+#   PASSWORD_STORE_DIR=$HOME/work/note note $@
+# }
+
+
+_note () {
+	local cmd
+	if (( CURRENT > 2)); then
+		cmd=${words[2]}
+		# Set the context for the subcommand.
+		curcontext="${curcontext%:*:*}:note-$cmd"
+		# Narrow the range of words we are looking at to exclude `note'
+		(( CURRENT-- ))
+		shift words
+		# Run the completion for the subcommand
+		case "${cmd}" in
+			init)
+				_arguments : \
+					"-p[gpg-id will only be applied to this subfolder]" \
+					"--path[gpg-id will only be applied to this subfolder]"
+				_note_complete_keys
+				;;
+			ls|list)
+				_note_complete_entries_with_subdirs
+				;;
+			cp|copy|mv|rename)
+				_arguments : \
+					"-f[force rename]" \
+					"--force[force rename]"
+					_note_complete_entries_with_subdirs
+				;;
+			rm)
+				_arguments : \
+					"-f[force deletion]" \
+					"--force[force deletion]" \
+					"-r[recursively delete]" \
+					"--recursive[recursively delete]"
+					_note_complete_entries_with_subdirs
+				;;
+			git)
+				local -a subcommands
+				subcommands=(
+					"init:Initialize git repository"
+					"push:Push to remote repository"
+					"pull:Pull from remote repository"
+					"config:Show git config"
+					"log:Show git log"
+					"reflog:Show git reflog"
+				)
+				_describe -t commands 'note git' subcommands
+				;;
+			edit|*)
+				_note_complete_entries_with_subdirs
+				;;
+		esac
+	else
+		local -a subcommands
+		subcommands=(
+			"init:Initialize new noteword storage"
+			"ls:List notewords"
+			"find:Find noteword files or directories based on pattern"
+			"grep:Search inside decrypted noteword files for matching pattern"
+			"edit:Edit a noteword with \$EDITOR"
+			"mv:Rename the noteword"
+			"cp:Copy the noteword"
+			"rm:Remove the noteword"
+			"git:Call git on the noteword store"
+			"version:Output version information"
+			"help:Output help message"
+		)
+		_describe -t commands 'note' subcommands
+		_arguments : \
+			"--version[Output version information]" \
+			"--help[Output help message]"
+		_note_complete_entries_with_subdirs
+	fi
+}
+
+_note_complete_entries_helper () {
+	local IFS=$'\n'
+	local prefix
+	zstyle -s ":completion:${curcontext}:" prefix prefix
+	if [[ -v NOTE_STORE_DIR ]]; then
+	       	prefix=${NOTE_STORE_DIR}
+	elif [[ -z "$prefix" ]]; then
+		_prefix='.'
+		while [[ ! -d "${_prefix}/.note-store" && $(readlink -m ${_prefix}) != "/" ]] ; do
+			_prefix="${_prefix}/.."
+		done
+
+		[[ -d "${_prefix}/.note-store" ]] && prefix="$(readlink -m ${_prefix})/.note-store"
+
+		unset _prefix
+	else
+		prefix="$HOME/.note-store"
+	fi
+       
+	_values -C 'notewords' ${$(find -L "$prefix" \( -name .git -o -name .gpg-id \) -prune -o $@ -print 2>/dev/null | sed -e "s#${prefix}/\{0,1\}##" -e 's#\.gpg##' -e 's#\\#\\\\#' | sort):-""}
+}
+
+_note_complete_entries_with_subdirs () {
+	_note_complete_entries_helper
+}
+
+_note_complete_entries () {
+	_note_complete_entries_helper -type f
+}
+
+_note_complete_keys () {
+	local IFS=$'\n'
+	# Extract names and email addresses from gpg --list-keys
+	_values 'gpg keys' $(gpg2 --list-secret-keys --with-colons | cut -d : -f 10 | sort -u | sed '/^$/d')
+}
+
+_note

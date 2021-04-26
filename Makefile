@@ -1,4 +1,4 @@
-PREFIX ?= /usr
+PREFIX ?= /usr/local
 DESTDIR ?=
 BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/lib
@@ -32,37 +32,37 @@ endif
 endif
 
 all:
-	@echo "Password store is a shell script, so there is nothing to do. Try \"make install\" instead."
+	@echo '`note` is a shell script, so there is nothing to do. Try "make install" instead.'
 
 install-common:
-	@install -v -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 -v man/pass.1 "$(DESTDIR)$(MANDIR)/man1/pass.1"
-	@[ "$(WITH_BASHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(BASHCOMPDIR)" && install -m 0644 -v src/completion/pass.bash-completion "$(DESTDIR)$(BASHCOMPDIR)/pass"
-	@[ "$(WITH_ZSHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(ZSHCOMPDIR)" && install -m 0644 -v src/completion/pass.zsh-completion "$(DESTDIR)$(ZSHCOMPDIR)/_pass"
-	@[ "$(WITH_FISHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(FISHCOMPDIR)" && install -m 0644 -v src/completion/pass.fish-completion "$(DESTDIR)$(FISHCOMPDIR)/pass.fish"
+	@install -v -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 -v man/note.1 "$(DESTDIR)$(MANDIR)/man1/note.1"
+	@[ "$(WITH_BASHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(BASHCOMPDIR)" && install -m 0644 -v src/completion/note.bash-completion "$(DESTDIR)$(BASHCOMPDIR)/note"
+	@[ "$(WITH_ZSHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(ZSHCOMPDIR)" && install -m 0644 -v src/completion/note.zsh-completion "$(DESTDIR)$(ZSHCOMPDIR)/_note"
+	@[ "$(WITH_FISHCOMP)" = "yes" ] || exit 0; install -v -d "$(DESTDIR)$(FISHCOMPDIR)" && install -m 0644 -v src/completion/note.fish-completion "$(DESTDIR)$(FISHCOMPDIR)/note.fish"
 
 
 ifneq ($(strip $(wildcard $(PLATFORMFILE))),)
 install: install-common
-	@install -v -d "$(DESTDIR)$(LIBDIR)/password-store" && install -m 0644 -v "$(PLATFORMFILE)" "$(DESTDIR)$(LIBDIR)/password-store/platform.sh"
-	@install -v -d "$(DESTDIR)$(LIBDIR)/password-store/extensions"
+	@install -v -d "$(DESTDIR)$(LIBDIR)/note-store" && install -m 0644 -v "$(PLATFORMFILE)" "$(DESTDIR)$(LIBDIR)/note-store/platform.sh"
+	@install -v -d "$(DESTDIR)$(LIBDIR)/note-store/extensions"
 	@install -v -d "$(DESTDIR)$(BINDIR)/"
-	@trap 'rm -f src/.pass' EXIT; sed 's:.*PLATFORM_FUNCTION_FILE.*:source "$(LIBDIR)/password-store/platform.sh":;s:^SYSTEM_EXTENSION_DIR=.*:SYSTEM_EXTENSION_DIR="$(LIBDIR)/password-store/extensions":' src/password-store.sh > src/.pass && \
-	install -v -d "$(DESTDIR)$(BINDIR)/" && install -m 0755 -v src/.pass "$(DESTDIR)$(BINDIR)/pass"
+	@trap 'rm -f src/.note' EXIT; sed 's:.*PLATFORM_FUNCTION_FILE.*:source "$(LIBDIR)/note-store/platform.sh":;s:^SYSTEM_EXTENSION_DIR=.*:SYSTEM_EXTENSION_DIR="$(LIBDIR)/note-store/extensions":' src/note-store.sh > src/.note && \
+	install -v -d "$(DESTDIR)$(BINDIR)/" && install -m 0755 -v src/.note "$(DESTDIR)$(BINDIR)/note"
 else
 install: install-common
-	@install -v -d "$(DESTDIR)$(LIBDIR)/password-store/extensions"
-	@trap 'rm -f src/.pass' EXIT; sed '/PLATFORM_FUNCTION_FILE/d;s:^SYSTEM_EXTENSION_DIR=.*:SYSTEM_EXTENSION_DIR="$(LIBDIR)/password-store/extensions":' src/password-store.sh > src/.pass && \
-	install -v -d "$(DESTDIR)$(BINDIR)/" && install -m 0755 -v src/.pass "$(DESTDIR)$(BINDIR)/pass"
+	@install -v -d "$(DESTDIR)$(LIBDIR)/note-store/extensions"
+	@trap 'rm -f src/.note' EXIT; sed '/PLATFORM_FUNCTION_FILE/d;s:^SYSTEM_EXTENSION_DIR=.*:SYSTEM_EXTENSION_DIR="$(LIBDIR)/note-store/extensions":' src/note-store.sh > src/.note && \
+	install -v -d "$(DESTDIR)$(BINDIR)/" && install -m 0755 -v src/.note "$(DESTDIR)$(BINDIR)/note"
 endif
 
 uninstall:
 	@rm -vrf \
-		"$(DESTDIR)$(BINDIR)/pass" \
-		"$(DESTDIR)$(LIBDIR)/password-store" \
-		"$(DESTDIR)$(MANDIR)/man1/pass.1" \
-		"$(DESTDIR)$(BASHCOMPDIR)/pass" \
-		"$(DESTDIR)$(ZSHCOMPDIR)/_pass" \
-		"$(DESTDIR)$(FISHCOMPDIR)/pass.fish"
+		"$(DESTDIR)$(BINDIR)/note" \
+		"$(DESTDIR)$(LIBDIR)/note-store" \
+		"$(DESTDIR)$(MANDIR)/man1/note.1" \
+		"$(DESTDIR)$(BASHCOMPDIR)/note" \
+		"$(DESTDIR)$(ZSHCOMPDIR)/_note" \
+		"$(DESTDIR)$(FISHCOMPDIR)/note.fish"
 
 TESTS = $(sort $(wildcard tests/t[0-9][0-9][0-9][0-9]-*.sh))
 

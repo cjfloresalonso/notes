@@ -6,7 +6,7 @@ should install pass to the standard locations.
 
 The makefile is aware of the following environment variables:
 
-PREFIX      default: /usr
+PREFIX      default: /usr/local
 DESTDIR     default: 
 BINDIR      default: $(PREFIX)/bin
 LIBDIR      default: $(PREFIX)/lib
@@ -24,7 +24,7 @@ ZSHCOMPDIR, and FISHCOMPDIR.
 
 -- Test Suite --
 
-Pass has a test suite which uses Sharness:
+Notes has a test suite which uses Sharness:
 <https://github.com/mlafeldt/sharness>
 
 To run all tests, run 'make test'.
