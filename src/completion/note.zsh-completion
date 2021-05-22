@@ -35,6 +35,15 @@ _note () {
 					"--path[gpg-id will only be applied to this subfolder]"
 				_note_complete_keys
 				;;
+			show)
+				_note_complete_entries_with_subdirs
+				;;
+			insert|append)
+				_note_complete_entries_with_subdirs
+				;;
+			touch)
+				_note_complete_entries_with_subdirs
+				;;
 			ls|list)
 				_note_complete_entries_with_subdirs
 				;;
@@ -43,6 +52,10 @@ _note () {
 					"-f[force rename]" \
 					"--force[force rename]"
 					_note_complete_entries_with_subdirs
+				;;
+			touch)
+				_arguments : \
+					_note_complete_entries_just_subdirs
 				;;
 			rm)
 				_arguments : \
@@ -75,6 +88,9 @@ _note () {
 			"ls:List notewords"
 			"find:Find noteword files or directories based on pattern"
 			"grep:Search inside decrypted noteword files for matching pattern"
+			"touch:Edit a noteword with \$EDITOR"
+			"insert:Edit a noteword with \$EDITOR"
+			"show:Edit a noteword with \$EDITOR"
 			"edit:Edit a noteword with \$EDITOR"
 			"mv:Rename the noteword"
 			"cp:Copy the noteword"
@@ -115,6 +131,10 @@ _note_complete_entries_helper () {
 
 _note_complete_entries_with_subdirs () {
 	_note_complete_entries_helper
+}
+
+_note_complete_entries_just_subdirs () {
+	_note_complete_entries_helper -type d
 }
 
 _note_complete_entries () {

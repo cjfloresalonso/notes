@@ -224,6 +224,12 @@ cmd_usage() {
 	    	List notes that match note-names.
 	    $PROGRAM grep [GREPOPTIONS] search-string
 	        Search for note files containing search-string when decrypted.
+	    $PROGRAM touch note-name
+	        Create a new empty note.
+	    $PROGRAM insert note-name
+	        Create a new empty note.
+	    $PROGRAM show note-name
+	        Print a note to the terminal.
 	    $PROGRAM edit note-name
 	        Insert a new note or edit an existing note using ${EDITOR:-vi}.
 	    $PROGRAM rm [--recursive,-r] [--force,-f] note-name
@@ -316,6 +322,59 @@ cmd_grep() {
 	done < <(find -L "$PREFIX" -path '*/.git' -prune -o -iname '*.gpg' -print0)
 }
 
+cmd_touch() {
+	[[ $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND note-name"
+
+	local path="${1%/}"
+	check_sneaky_paths "$path"
+	mkdir -p -v "$PREFIX/$(dirname -- "$path")"
+	set_gpg_recipients "$(dirname -- "$path")"
+	local notefile="$PREFIX/$path.gpg"
+	set_git "$notefile"
+
+	tmpdir #Defines $SECURE_TMPDIR
+	local tmp_file="$(mktemp -u "$SECURE_TMPDIR/XXXXXX")-${path//\//-}.txt"
+
+	local action="Create"
+	[[ -f $notefile ]] && die "Note already exists"
+
+	touch "$tmp_file"
+
+	[[ -f $tmp_file ]] || die "New note not saved."
+	$GPG -d -o - "${GPG_OPTS[@]}" "$notefile" 2>/dev/null | diff - "$tmp_file" &>/dev/null && die "Note unchanged."
+	while ! $GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$notefile" "${GPG_OPTS[@]}" "$tmp_file"; do
+		yesno "GPG encryption failed. Would you like to try again?"
+	done
+	git_add_file "$notefile" "$action note for $path."
+}
+
+cmd_insert() {
+	[[ $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND note-name"
+
+	local path="${1%/}"
+	check_sneaky_paths "$path"
+	mkdir -p -v "$PREFIX/$(dirname -- "$path")"
+	set_gpg_recipients "$(dirname -- "$path")"
+	local notefile="$PREFIX/$path.gpg"
+	set_git "$notefile"
+
+	tmpdir #Defines $SECURE_TMPDIR
+	local tmp_file="$(mktemp -u "$SECURE_TMPDIR/XXXXXX")-${path//\//-}.txt"
+
+	local action="Add"
+	if [[ -f $notefile ]]; then
+		$GPG -d -o "$tmp_file" "${GPG_OPTS[@]}" "$notefile" || exit 1
+		action="Append"
+	fi
+	cat >> "$tmp_file"
+	[[ -f $tmp_file ]] || die "New note not saved."
+	$GPG -d -o - "${GPG_OPTS[@]}" "$notefile" 2>/dev/null | diff - "$tmp_file" &>/dev/null && die "Note unchanged."
+	while ! $GPG -e "${GPG_RECIPIENT_ARGS[@]}" -o "$notefile" "${GPG_OPTS[@]}" "$tmp_file"; do
+		yesno "GPG encryption failed. Would you like to try again?"
+	done
+	git_add_file "$notefile" "$action note for $path using ${EDITOR:-vi}."
+}
+
 cmd_edit() {
 	[[ $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND note-name"
 
@@ -341,6 +400,28 @@ cmd_edit() {
 		yesno "GPG encryption failed. Would you like to try again?"
 	done
 	git_add_file "$notefile" "$action note for $path using ${EDITOR:-vi}."
+}
+
+cmd_show() {
+	[[ $# -ne 1 ]] && die "Usage: $PROGRAM $COMMAND note-name"
+
+	local path="${1%/}"
+	check_sneaky_paths "$path"
+	mkdir -p -v "$PREFIX/$(dirname -- "$path")"
+	set_gpg_recipients "$(dirname -- "$path")"
+	local notefile="$PREFIX/$path.gpg"
+	set_git "$notefile"
+
+	tmpdir #Defines $SECURE_TMPDIR
+	local tmp_file="$(mktemp -u "$SECURE_TMPDIR/XXXXXX")-${path//\//-}.txt"
+
+	local action="Add"
+	if [[ -f $notefile ]]; then
+		$GPG -d -o "$tmp_file" "${GPG_OPTS[@]}" "$notefile" || exit 1
+		action="Edit"
+	fi
+	[[ -f $tmp_file ]] || die "Note doesn't exist."
+	cat "$tmp_file"
 }
 
 cmd_delete() {
@@ -488,8 +569,11 @@ case "$1" in
 	help|--help) shift;		cmd_usage "$@" ;;
 	version|--version) shift;	cmd_version "$@" ;;
 	find|search) shift;		cmd_find "$@" ;;
+	touch) shift;			cmd_touch "$@" ;;
+	insert|append) shift;		cmd_insert "$@" ;;
 	grep) shift;			cmd_grep "$@" ;;
 	edit) shift;			cmd_edit "$@" ;;
+	show) shift;			cmd_show "$@" ;;
 	delete|rm|remove) shift;	cmd_delete "$@" ;;
 	rename|mv) shift;		cmd_copy_move "move" "$@" ;;
 	copy|cp) shift;			cmd_copy_move "copy" "$@" ;;

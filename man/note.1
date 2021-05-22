@@ -96,6 +96,16 @@ List names of notes inside the tree that match \fInote-names\fP by using the
 .BR tree (1)
 program. This command is alternatively named \fBsearch\fP.
 .TP
+\fBtouch\fP \fInote-name\fP
+Create a new empty note.
+.TP
+\fBinsert\fP \fInote-name\fP
+Create and populate a note into the note store from standard in. Will append too existing
+an existing note.
+.TP
+\fBshow\fP \fInote-name\fP
+Print a note to the terminal.
+.TP
 \fBedit\fP \fInote-name\fP
 Insert a new note or edit an existing note using the default text editor specified
 by the environment variable \fIEDITOR\fP or using
